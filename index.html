@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NonKung Snake Game</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #2c3e50;
+            color: white;
+            font-family: 'Arial', sans-serif;
+            flex-direction: column;
+        }
+        canvas {
+            border: 5px solid #ecf0f1;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            background-color: #000;
+        }
+        .score-board {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="score-board">คะแนน: <span id="score">0</span></div>
+    <canvas id="snakeGame" width="400" height="400"></canvas>
+    <p>ใช้ปุ่มลูกศร (Arrow Keys) ในการควบคุม</p>
+
+    <script>
+        const canvas = document.getElementById("snakeGame");
+        const ctx = canvas.getContext("2d");
+        const scoreElement = document.getElementById("score");
+
+        const box = 20; // ขนาดของหนึ่งช่อง
+        let score = 0;
+        let gameSpeed = 100; // ความเร็ว (มิลลิวินาที) ยิ่งน้อยยิ่งเร็ว
+
+        // ตัวงู (เริ่มที่ตำแหน่งกลางจอ)
+        let snake = [{ x: 9 * box, y: 10 * box }];
+
+        // ตำแหน่งอาหาร
+        let food = {
+            x: Math.floor(Math.random() * 19 + 1) * box,
+            y: Math.floor(Math.random() * 19 + 1) * box
+        };
+
+        let d; // ทิศทาง
+
+        // รับค่าการกดปุ่ม
+        document.addEventListener("keydown", direction);
+
+        function direction(event) {
+            if(event.keyCode == 37 && d != "RIGHT") {
+                d = "LEFT";
+            } else if(event.keyCode == 38 && d != "DOWN") {
+                d = "UP";
+            } else if(event.keyCode == 39 && d != "LEFT") {
+                d = "RIGHT";
+            } else if(event.keyCode == 40 && d != "UP") {
+                d = "DOWN";
+            }
+        }
+
+        // ฟังก์ชันตรวจสอบการชน
+        function collision(head, array) {
+            for(let i = 0; i < array.length; i++) {
+                if(head.x == array[i].x && head.y == array[i].y) return true;
+            }
+            return false;
+        }
+
+        // ฟังก์ชันวาดเกม
+        function draw() {
+            ctx.fillStyle = "black";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // วาดตัวงู
+            for(let i = 0; i < snake.length; i++) {
+                ctx.fillStyle = (i == 0) ? "#2ecc71" : "#27ae60";
+                ctx.fillRect(snake[i].x, snake[i].y, box, box);
+                ctx.strokeStyle = "black";
+                ctx.strokeRect(snake[i].x, snake[i].y, box, box);
+            }
+
+            // วาดอาหาร
+            ctx.fillStyle = "#e74c3c";
+            ctx.fillRect(food.x, food.y, box, box);
+
+            // ตำแหน่งหัวงูเดิม
+            let snakeX = snake[0].x;
+            let snakeY = snake[0].y;
+
+            // เคลื่อนที่ตามทิศทาง
+            if( d == "LEFT") snakeX -= box;
+            if( d == "UP") snakeY -= box;
+            if( d == "RIGHT") snakeX += box;
+            if( d == "DOWN") snakeY += box;
+
+            // ถ้างูกินอาหาร
+            if(snakeX == food.x && snakeY == food.y) {
+                score++;
+                scoreElement.innerHTML = score;
+                food = {
+                    x: Math.floor(Math.random() * 19 + 1) * box,
+                    y: Math.floor(Math.random() * 19 + 1) * box
+                };
+            } else {
+                // ลบหางออกเพื่อให้งูเคลื่อนที่
+                snake.pop();
+            }
+
+            let newHead = { x: snakeX, y: snakeY };
+
+            // กฎการแพ้ (ชนกำแพง หรือ ชนตัวเอง)
+            if(snakeX < 0 || snakeX >= canvas.width || snakeY < 0 || snakeY >= canvas.height || collision(newHead, snake)) {
+                clearInterval(game);
+                alert("จบเกม! คะแนนของคุณคือ: " + score);
+                location.reload(); // รีโหลดหน้าเว็บเพื่อเริ่มใหม่
+            }
+
+            snake.unshift(newHead);
+        }
+
+        let game = setInterval(draw, gameSpeed);
+    </script>
+</body>
+</html>
