@@ -1,190 +1,121 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 <head>
-<meta charset="UTF-8">
-<title>Tap the Circle – Mobile Friendly</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<style>
-  /* ---- Global reset ---- */
-  * { box-sizing: border-box; margin:0; padding:0; }
+    <meta charset="UTF-8">
+    <title>เกมคลิกที่สวยงาม</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
 
-  html, body {
-    height: 100%;
-    overflow: hidden;               /* avoid scrollbars on mobile */
-    background:#111;
-    font-family:system-ui, sans-serif;
-    color:#fff;
-  }
+        .game-container {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            width: 300px;
+            max-width: 90%;
+        }
 
-  /* ---- Game container (fills the screen) ---- */
-  #game {
-    position:relative;
-    width:100%;
-    height:100%;
-    overflow:hidden;
-  }
+        h1 {
+            color: #2575fc;
+            margin-bottom: 20px;
+        }
 
-  /* ---- Circle (the target) ---- */
-  #target {
-    position:absolute;
-    width:80px;               /* size adapts via CSS below */
-    height:80px;
-    background:#ff4136;
-    border-radius:50%;
-    cursor:pointer;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:1.2rem;
-    user-select:none;
-    touch-action: manipulation;   /* prevent double‑tap zoom */
-  }
+        #score {
+            font-size: 48px;
+            color: #2575fc;
+            margin: 20px 0;
+        }
 
-  /* ---- UI overlay (score / lives) ---- */
-  #ui {
-    position:absolute;
-    top:10px;
-    left:10px;
-    font-size:1.1rem;
-    pointer-events:none;   /* let taps go through */
-  }
+        #clicker {
+            padding: 15px 30px;
+            font-size: 18px;
+            background: #2575fc;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
 
-  #score { margin-right:15px; }
+        #clicker:hover {
+            background: #1a5a9e;
+            transform: scale(1.1);
+        }
 
-  #lives > span {
-    display:inline-block;
-    width:12px; height:12px;
-    margin-right:4px;
-    background:#ff4136;
-    border-radius:50%;
-    vertical-align:middle;
-  }
+        #clicker:active {
+            transform: scale(0.9);
+        }
 
-  /* ---- Game‑over overlay ---- */
-  #overlay {
-    position:absolute;
-    inset:0;
-    background:rgba(0,0,0,0.7);
-    color:#fff;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    font-size:2rem;
-    visibility:hidden;
-    pointer-events:none;
-  }
-  #overlay.show { visibility:visible; }
+        #upgrade {
+            margin-top: 20px;
+            display: none;
+        }
 
-  #restart {
-    margin-top:20px;
-    padding:10px 20px;
-    background:#ff4136;
-    color:#fff;
-    border:none;
-    border-radius:5px;
-    cursor:pointer;
-    font-size:1.2rem;
-  }
-</style>
+        #upgrade button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        #upgrade button:hover {
+            background: #e63946;
+        }
+    </style>
 </head>
 <body>
+    <div class="game-container">
+        <h1>เกมคลิกที่สวยงาม</h1>
+        <div id="score">คะแนน: 0</div>
+        <button id="clicker">คลิกที่นี่เพื่อเพิ่มคะแนน!</button>
+        <div id="upgrade">
+            <h2>อัปเกรดความเร็ว</h2>
+            <p>ค่าใช้จ่าย: 100 คะแนน</p>
+            <button onclick="buyUpgrade()">ซื้ออัปเกรด</button>
+        </div>
+    </div>
 
-<div id="game">
-  <div id="target">&#9791;</div>   <!-- Unicode "⚡" as the circle -->
-  <div id="ui">
-    Score: <span id="score">0</span>
-    Lives: <div id="lives"><span></span><span></span><span></span></div>
-  </div>
+    <script>
+        let score = 0;
+        let clickValue = 1;
+        let upgradeBought = false;
 
-  <div id="overlay"><br>Game Over<br><br><button id="restart">Play Again</button></div>
-</div>
+        document.getElementById('clicker').addEventListener('click', () => {
+            score += clickValue;
+            updateScore();
+        });
 
-<script>
-/* -------------------- Game logic -------------------- */
-const target   = document.getElementById('target');
-const scoreEl  = document.getElementById('score');
-const livesEl  = document.getElementById('lives');
-const overlay  = document.getElementById('overlay');
-const restartBtn = document.getElementById('restart');
+        function updateScore() {
+            document.getElementById('score').textContent = `คะแนน: ${score}`;
+            const upgrade = document.getElementById('upgrade');
+            if (score >= 100 && !upgradeBought) {
+                upgrade.style.display = 'block';
+            }
+        }
 
-let score   = 0;
-let lives   = 3;
-let timerId = null;
-const maxTime = 3000;          // 3 seconds per round
-
-// ---- Helper: place the circle randomly inside the game area ----
-function placeTarget() {
-  const gameRect = document.getElementById('game').getBoundingClientRect();
-
-  // compute max left / top so the whole circle stays inside the container
-  const maxX = gameRect.width  - target.offsetWidth;
-  const maxY = gameRect.height - target.offsetHeight;
-
-  const x = Math.random() * maxX;
-  const y = Math.random() * maxY;
-
-  target.style.left = `${x}px`;
-  target.style.top  = `${y}px`;
-}
-
-// ---- Start a new round (circle appears + timer) ----
-function startRound() {
-  placeTarget();
-
-  // reset timer
-  clearInterval(timerId);
-  timerId = setTimeout(() => {
-    // time's up → lose a life
-    loseLife();
-  }, maxTime);
-}
-
-// ---- Increase score and start next round ----
-target.addEventListener('touchstart', onTap);
-target.addEventListener('click', onTap);   // for desktop browsers
-
-function onTap(e) {
-  // ignore taps while a timer is counting down (prevent double‑tap)
-  if (timerId !== null) {
-    clearInterval(timerId);
-    score++;
-    scoreEl.textContent = score;
-    startRound();               // immediate next round
-  }
-}
-
-// ---- Lose a life ----
-function loseLife() {
-  lives--;
-  livesEl.children[3-lives].style.display = 'none';   // hide the last dot
-  if (lives <= 0) {
-    endGame();
-  } else {
-    startRound();               // give another chance
-  }
-}
-
-// ---- Game over ----
-function endGame() {
-  clearInterval(timerId);
-  overlay.classList.add('show');
-}
-
-// ---- Restart button ----
-restartBtn.addEventListener('click', () => {
-  // reset everything
-  score = 0;
-  scoreEl.textContent = score;
-  lives = 3;
-  livesEl.innerHTML = '<span></span><span></span><span></span>';
-  overlay.classList.remove('show');
-  startRound();
-});
-
-// ---- Init ----
-startRound();
-</script>
-
+        function buyUpgrade() {
+            if (score >= 100) {
+                score -= 100;
+                clickValue *= 2;
+                upgradeBought = true;
+                document.getElementById('upgrade').style.display = 'none';
+                updateScore();
+            }
+        }
+    </script>
 </body>
 </html>
