@@ -1,177 +1,39 @@
 <!DOCTYPE html>
-<html lang="th">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NonKung Snake Game</title>
+    <title>🎮 Guess the Number Game</title>
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            background: #1e272e;
-            color: #fff;
-            font-family: Arial, sans-serif;
-        }
-        .score {
-            font-size: 1.2rem;
-            margin-bottom: 0.5rem;
-        }
-        canvas {
-            border: 3px solid #fff;
-            background: #fff;
-            box-shadow: 0 0 15px rgba(0,0,0,.5);
-        }
-        #game-over {
-            color: #ff5252;
-            font-size: 1.5rem;
-            margin-top: 1rem;
-            display: none;
-        }
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f0f8ff; }
+        #gameContainer { border: 2px solid #333; margin-bottom: 20px; background: white; }
+        #question { margin: 10px 0; font-size: 1.2em; }
+        #response { margin: 10px 0; padding: 10px; background: #e0e0e0; }
     </style>
 </head>
 <body>
+    <div id="gameContainer">
+        <div id="question">Choose a number between 1-10: </div>
+        <input type="number" id="myNumber" placeholder="Enter number">
+        <button onclick="checkGuess()">Guess</button>
+        <div id="response"></div>
+    </div>
 
-<div class="score">คะแนน: <span id="score">0</span></div>
-<canvas id="game" width="400" height="400"></canvas>
-<div id="game-over">เกมจบ! คะแนน: <span id="finalScore"></span></div>
+    <script>
+        function checkGuess() {
+            const guess = parseInt(document.getElementById('myNumber').value);
+            const numbers = [1,2,3,4,5,6,7,8,9,10];
+            const correct = numbers[Math.floor(Math.random() * numbers.length)];
 
-<script>
-    // ---------- การตั้งค่า ----------
-    const canvas = document.getElementById('game');
-    const ctx = canvas.getContext('2d');
-    const scoreEl = document.getElementById('score');
-    const overEl = document.getElementById('game-over');
-    const finalScoreEl = document.getElementById('finalScore');
-
-    let box = 20;                     // ขนาดเซลล์ (pixel)
-    let score = 0;
-    let speed = 120;                  // มิลลิวินาทีระหว่างเฟรม
-    let direction = 'RIGHT';          // ทิศทางเริ่มต้น
-    let gameRunning = true;
-    let gameId = null;                // for setInterval
-
-    // ---------- ตำแหน่งงู ----------
-    // เริ่มต้นที่ตำแหน่ง (9,10)  -> 9*20, 10*20
-    let snake = [{x: 9 * box, y: 10 * box}];
-    // ---------- ตำแหน่งอาหาร ----------
-    let food = {
-        x: Math.floor(Math.random() * 19 + 1) * box,
-        y: Math.floor(Math.random() * 19 + 1) * box
-    };
-
-    // ---------- ฟังการกดคีย์ ----------
-    document.addEventListener('keydown', e => {
-        if (!gameRunning) return;
-        switch (e.keyCode) {
-            case 37: // Left
-                if (direction !== 'RIGHT') direction = 'LEFT';
-                break;
-            case 38: // Up
-                if (direction !== 'DOWN') direction = 'UP';
-                break;
-            case 39: // Right
-                if (direction !== 'LEFT') direction = 'RIGHT';
-                break;
-            case 40: // Down
-                if (direction !== 'UP') direction = 'DOWN';
-                break;
+            const responseDiv = document.getElementById('response');
+            responseDiv.textContent = `Correct! You picked ${correct}!`;
+            
+            if (guess === correct) {
+                responseDiv.textContent = "Congratulations! You guessed right!";
+            } else {
+                responseDiv.textContent = `Wrong! The correct number is ${correct}`;
+            }
+            document.getElementById('question').innerHTML = 
+                `Choose a number between 1-10: `;
         }
-    });
-
-    // ---------- ฟังก์ชันหลัก ----------
-    function draw() {
-        // ล้างพื้นที่
-        ctx.fillStyle = '#1e272e';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // วาดงู
-        snake.forEach((segment, i) => {
-            ctx.fillStyle = i === 0 ? '#2ecc71' : '#27ae60';
-            ctx.fillRect(segment.x, segment.y, box, box);
-            ctx.strokeStyle = '#000';
-            ctx.strokeRect(segment.x, segment.y, box, box);
-        });
-
-        // วาดอาหาร
-        ctx.fillStyle = '#e74c3c';
-        ctx.fillRect(food.x, food.y, box, box);
-        ctx.strokeStyle = '#000';
-        ctx.strokeRect(food.x, food.y, box, box);
-    }
-
-    function update() {
-        // คำนวณตำแหน่งหัวงูใหม่ตามทิศทาง
-        let headX = snake[0].x;
-        let headY = snake[0].y;
-
-        if (direction === 'LEFT')  headX -= box;
-        if (direction === 'UP')    headY -= box;
-        if (direction === 'RIGHT') headX += box;
-        if (direction === 'DOWN')  headY += box;
-
-        // ตรวจสอบชนกับขอบหรือกับตัวเอง
-        if (
-            headX < 0 || headX >= canvas.width ||
-            headY < 0 || headY >= canvas.height ||
-            // ตรวจสอบการชนกับร่างกาย (ยกเว้นหัว)
-            snake.some(seg => seg.x === headX && seg.y === headY)
-        ) {
-            endGame();
-            return;
-        }
-
-        // เพิ่มหัวงูใหม่
-        snake.unshift({ x: headX, y: headY });
-
-        // ถ้ากินอาหาร
-        if (headX === food.x && headY === food.y) {
-            score++;
-            scoreEl.textContent = score;
-            // สร้างอาหารใหม่ในตำแหน่งที่随机
-            food = {
-                x: Math.floor(Math.random() * 19 + 1) * box,
-                y: Math.floor(Math.random() * 19 + 1) * box
-            };
-        } else {
-            // ไม่กิน → ลบหาง
-            snake.pop();
-        }
-    }
-
-    function loop() {
-        if (!gameRunning) return;
-        update();
-        draw();
-        gameId = setTimeout(loop, speed);
-    }
-
-    function startGame() {
-        // เริ่มเกมใหม่ (รีเซ็ต)
-        snake = [{x: 9 * box, y: 10 * box}];
-        score = 0;
-        scoreEl.textContent = score;
-        direction = 'RIGHT';
-        gameRunning = true;
-        overEl.style.display = 'none';
-        clearInterval(gameId);
-        loop();
-    }
-
-    function endGame() {
-        gameRunning = false;
-        clearInterval(gameId);
-        finalScoreEl.textContent = score;
-        overEl.style.display = 'block';
-    }
-
-    // เริ่มเกมทันทีที่หน้าเว็บโหลด
-    window.addEventListener('load', startGame);
-</script>
-
+    </script>
 </body>
 </html>
