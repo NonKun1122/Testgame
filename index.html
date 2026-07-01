@@ -1,15 +1,190 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Catch the Ball – 2D Game</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<title>Tap the Circle – Mobile Friendly</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<style>
+  /* ---- Global reset ---- */
+  * { box-sizing: border-box; margin:0; padding:0; }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;               /* avoid scrollbars on mobile */
+    background:#111;
+    font-family:system-ui, sans-serif;
+    color:#fff;
+  }
+
+  /* ---- Game container (fills the screen) ---- */
+  #game {
+    position:relative;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+  }
+
+  /* ---- Circle (the target) ---- */
+  #target {
+    position:absolute;
+    width:80px;               /* size adapts via CSS below */
+    height:80px;
+    background:#ff4136;
+    border-radius:50%;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:1.2rem;
+    user-select:none;
+    touch-action: manipulation;   /* prevent double‑tap zoom */
+  }
+
+  /* ---- UI overlay (score / lives) ---- */
+  #ui {
+    position:absolute;
+    top:10px;
+    left:10px;
+    font-size:1.1rem;
+    pointer-events:none;   /* let taps go through */
+  }
+
+  #score { margin-right:15px; }
+
+  #lives > span {
+    display:inline-block;
+    width:12px; height:12px;
+    margin-right:4px;
+    background:#ff4136;
+    border-radius:50%;
+    vertical-align:middle;
+  }
+
+  /* ---- Game‑over overlay ---- */
+  #overlay {
+    position:absolute;
+    inset:0;
+    background:rgba(0,0,0,0.7);
+    color:#fff;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    font-size:2rem;
+    visibility:hidden;
+    pointer-events:none;
+  }
+  #overlay.show { visibility:visible; }
+
+  #restart {
+    margin-top:20px;
+    padding:10px 20px;
+    background:#ff4136;
+    color:#fff;
+    border:none;
+    border-radius:5px;
+    cursor:pointer;
+    font-size:1.2rem;
+  }
+</style>
 </head>
 <body>
-    <h1>Catch the Ball</h1>
-    <p>ใช้ลูกศรซ้าย/ขวา เพื่อเคลื่อนย้ายตัวละคร และกด Space เพื่อรบกวนลูกบอล</p>
-    <canvas id="gameCanvas" width="800" height="500"></canvas>
-    <p id="score">คะแนน: 0</p>
-    <script src="game.js"></script>
+
+<div id="game">
+  <div id="target">&#9791;</div>   <!-- Unicode "⚡" as the circle -->
+  <div id="ui">
+    Score: <span id="score">0</span>
+    Lives: <div id="lives"><span></span><span></span><span></span></div>
+  </div>
+
+  <div id="overlay"><br>Game Over<br><br><button id="restart">Play Again</button></div>
+</div>
+
+<script>
+/* -------------------- Game logic -------------------- */
+const target   = document.getElementById('target');
+const scoreEl  = document.getElementById('score');
+const livesEl  = document.getElementById('lives');
+const overlay  = document.getElementById('overlay');
+const restartBtn = document.getElementById('restart');
+
+let score   = 0;
+let lives   = 3;
+let timerId = null;
+const maxTime = 3000;          // 3 seconds per round
+
+// ---- Helper: place the circle randomly inside the game area ----
+function placeTarget() {
+  const gameRect = document.getElementById('game').getBoundingClientRect();
+
+  // compute max left / top so the whole circle stays inside the container
+  const maxX = gameRect.width  - target.offsetWidth;
+  const maxY = gameRect.height - target.offsetHeight;
+
+  const x = Math.random() * maxX;
+  const y = Math.random() * maxY;
+
+  target.style.left = `${x}px`;
+  target.style.top  = `${y}px`;
+}
+
+// ---- Start a new round (circle appears + timer) ----
+function startRound() {
+  placeTarget();
+
+  // reset timer
+  clearInterval(timerId);
+  timerId = setTimeout(() => {
+    // time's up → lose a life
+    loseLife();
+  }, maxTime);
+}
+
+// ---- Increase score and start next round ----
+target.addEventListener('touchstart', onTap);
+target.addEventListener('click', onTap);   // for desktop browsers
+
+function onTap(e) {
+  // ignore taps while a timer is counting down (prevent double‑tap)
+  if (timerId !== null) {
+    clearInterval(timerId);
+    score++;
+    scoreEl.textContent = score;
+    startRound();               // immediate next round
+  }
+}
+
+// ---- Lose a life ----
+function loseLife() {
+  lives--;
+  livesEl.children[3-lives].style.display = 'none';   // hide the last dot
+  if (lives <= 0) {
+    endGame();
+  } else {
+    startRound();               // give another chance
+  }
+}
+
+// ---- Game over ----
+function endGame() {
+  clearInterval(timerId);
+  overlay.classList.add('show');
+}
+
+// ---- Restart button ----
+restartBtn.addEventListener('click', () => {
+  // reset everything
+  score = 0;
+  scoreEl.textContent = score;
+  lives = 3;
+  livesEl.innerHTML = '<span></span><span></span><span></span>';
+  overlay.classList.remove('show');
+  startRound();
+});
+
+// ---- Init ----
+startRound();
+</script>
+
 </body>
 </html>
